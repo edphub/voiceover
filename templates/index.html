@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoiceOver Studio - AI-Powered Script Enhancement</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --ai-color: #8e44ad;
+            --openai-color: #10a37f;
+            --deepseek-color: #4a6cf7;
+            --cerebras-color: #ff6b35;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+            border: none;
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 20px;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        
+        .ai-card-header {
+            background: linear-gradient(135deg, var(--ai-color), #c0392b);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+            border: none;
+            border-radius: 10px;
+            padding: 12px 24px;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .btn-ai {
+            background: linear-gradient(135deg, var(--ai-color), #c0392b);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 24px;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        
+        .btn-ai:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            color: white;
+        }
+        
+        .voice-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            border-radius: 10px;
+        }
+        
+        .voice-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .voice-card.selected {
+            border-color: var(--secondary-color);
+            background: linear-gradient(135deg, #f0f8ff, #e8f4f8);
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 30px;
+        }
+        
+        .loading.active {
+            display: block;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--secondary-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+        
+        textarea {
+            font-size: 14px;
+            line-height: 1.6;
+            font-family: monospace;
+        }
+        
+        .stats-card {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        
+        .audio-player {
+            width: 100%;
+            margin-top: 10px;
+            border-radius: 10px;
+        }
+        
+        .project-item {
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+        
+        .project-item:hover {
+            background: #f8f9fa;
+            border-left-color: var(--secondary-color);
+        }
+        
+        .modal-content {
+            border-radius: 15px;
+        }
+        
+        .ai-badge {
+            background: linear-gradient(135deg, var(--ai-color), #c0392b);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: inline-block;
+        }
+        
+        .script-diff {
+            background: #f0f9ff;
+            border-left: 4px solid var(--ai-color);
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 10px;
+        }
+        
+        .ai-selector {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .ai-option {
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+        
+        .ai-option:hover {
+            transform: translateY(-2px);
+        }
+        
+        .ai-option.selected {
+            border-color: var(--secondary-color);
+            background: white;
+        }
+        
+        .speed-badge {
+            background: #ff6b35;
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 5px;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .ai-processing {
+            animation: pulse 1s infinite;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            .container {
+                padding: 0;
+            }
+        }
+        
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--secondary-color);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="toast-container"></div>
+    
+    <!-- Download Dialog Modal -->
+    <div class="modal fade" id="downloadModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, var(--secondary-color), var(--primary-color)); color: white;">
+                    <h5 class="modal-title">
+                        <i class="fas fa-download"></i> Save Audio File
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="saveFilename" class="form-label">File Name</label>
+                        <input type="text" class="form-control" id="saveFilename" placeholder="e.g., orientation_slide1">
+                        <small class="text-muted">.mp3 will be added automatically</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="saveLocation" class="form-label">Save Location</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="saveLocation" placeholder="~/Downloads" readonly>
+                            <button class="btn btn-outline-secondary" type="button" onclick="selectSaveLocation()">
+                                <i class="fas fa-folder-open"></i> Browse
+                            </button>
+                        </div>
+                        <small class="text-muted">Default: Downloads folder</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmDownload()">
+                        <i class="fas fa-save"></i> Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, var(--danger-color), #c0392b); color: white;">
+                    <h5 class="modal-title">
+                        <i class="fas fa-trash"></i> Confirm Delete
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete this voiceover?</p>
+                    <p class="text-danger"><strong>This action cannot be undone!</strong></p>
+                    <div id="deleteFileInfo"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmDelete()">
+                        <i class="fas fa-trash"></i> Delete Permanently
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- Header -->
+        <div class="text-center mb-4">
+            <h1 class="text-white" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
+                <i class="fas fa-microphone-alt"></i> VoiceOver Studio Pakistan
+            </h1>
+            <p class="text-white">AI-Powered Script Enhancement (ChatGPT, DeepSeek, or Cerebras) + Professional Voices</p>
+            <div class="alert alert-info" style="background: rgba(255,255,255,0.9);">
+                <i class="fas fa-tachometer-alt"></i> <strong>NEW!</strong> Cerebras AI - Lightning fast script enhancement (up to 2,600 tokens/sec!)
+            </div>
+        </div>
+        
+        <div class="row">
+            <!-- Left Column -->
+            <div class="col-md-4">
+                <!-- AI Provider Selection -->
+                <div class="card">
+                    <div class="card-header ai-card-header">
+                        <i class="fas fa-brain"></i> AI Provider Selection
+                    </div>
+                    <div class="card-body">
+                        <div class="ai-selector">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="ai-option card p-2 text-center" id="option-deepseek" onclick="selectAIProvider('deepseek')">
+                                        <i class="fab fa-react" style="font-size: 28px; color: var(--deepseek-color);"></i>
+                                        <small><strong>DeepSeek</strong></small>
+                                        <div id="deepseek-badge" class="mt-1"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="ai-option card p-2 text-center" id="option-openai" onclick="selectAIProvider('openai')">
+                                        <i class="fab fa-openai" style="font-size: 28px; color: var(--openai-color);"></i>
+                                        <small><strong>ChatGPT</strong></small>
+                                        <div id="openai-badge" class="mt-1"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="ai-option card p-2 text-center" id="option-cerebras" onclick="selectAIProvider('cerebras')">
+                                        <i class="fas fa-bolt" style="font-size: 28px; color: var(--cerebras-color);"></i>
+                                        <small><strong>Cerebras</strong></small>
+                                        <span class="speed-badge">⚡ FAST</span>
+                                        <div id="cerebras-badge" class="mt-1"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- DeepSeek Configuration -->
+                        <div id="deepseek-config" style="display: none;">
+                            <div class="mb-3">
+                                <label for="deepseekApiKey" class="form-label">DeepSeek API Key</label>
+                                <input type="password" class="form-control" id="deepseekApiKey" placeholder="Enter your DeepSeek API key">
+                                <small class="text-muted">Get from <a href="https://platform.deepseek.com/api_keys" target="_blank">DeepSeek Platform</a></small>
+                            </div>
+                        </div>
+                        
+                        <!-- OpenAI Configuration -->
+                        <div id="openai-config" style="display: none;">
+                            <div class="mb-3">
+                                <label for="openaiApiKey" class="form-label">OpenAI API Key</label>
+                                <input type="password" class="form-control" id="openaiApiKey" placeholder="Enter your OpenAI API key">
+                                <small class="text-muted">Get from <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI Platform</a></small>
+                            </div>
+                            <div class="mb-3">
+                                <label for="openaiModel" class="form-label">Model</label>
+                                <select class="form-control" id="openaiModel">
+                                    <option value="gpt-4">GPT-4 (Best quality)</option>
+                                    <option value="gpt-3.5-turbo" selected>GPT-3.5 Turbo (Faster, cheaper)</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Cerebras Configuration -->
+                        <div id="cerebras-config" style="display: none;">
+                            <div class="mb-3">
+                                <label for="cerebrasApiKey" class="form-label">Cerebras API Key</label>
+                                <input type="password" class="form-control" id="cerebrasApiKey" placeholder="Enter your Cerebras API key">
+                                <small class="text-muted">Get free from <a href="https://cloud.cerebras.ai/" target="_blank">Cerebras Cloud</a> (1M tokens/day free!)</small>
+                            </div>
+                            <div class="mb-3">
+                                <label for="cerebrasModel" class="form-label">Model</label>
+                                <select class="form-control" id="cerebrasModel">
+                                    <option value="llama3.1-8b" selected>Llama 3.1 8B (Fastest)</option>
+                                    <option value="llama3.1-70b">Llama 3.1 70B (Best quality)</option>
+                                    <option value="qwen-3-235b">Qwen 3 235B (Massive model)</option>
+                                </select>
+                                <small class="text-muted">⚡ Up to 2,600 tokens/second!</small>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="enhancementStyle" class="form-label">Enhancement Style</label>
+                            <select class="form-control" id="enhancementStyle">
+                                <option value="professional">Professional & Corporate</option>
+                                <option value="educational">Educational & Engaging</option>
+                                <option value="conversational">Conversational & Natural</option>
+                                <option value="motivational">Motivational & Inspiring</option>
+                            </select>
+                        </div>
+                        
+                        <button class="btn btn-ai w-100" onclick="saveAIConfig()">
+                            <i class="fas fa-save"></i> Save AI Configuration
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- ElevenLabs Configuration -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-key"></i> Premium Voices Setup
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="apiKey" class="form-label">ElevenLabs API Key</label>
+                            <input type="password" class="form-control" id="apiKey" placeholder="Enter your API key">
+                            <small class="text-muted">Get from <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank">ElevenLabs Dashboard</a></small>
+                        </div>
+                        <button class="btn btn-primary w-100" onclick="configureEleven()">
+                            <i class="fas fa-check"></i> Enable Premium Voices
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Voice Selection -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-voice"></i> Select Voice
+                    </div>
+                    <div class="card-body">
+                        <h6 class="mb-3">🇵🇰 Premium Voices</h6>
+                        <div id="premiumVoices" class="mb-4">
+                            <div class="text-muted">Add API key to enable</div>
+                        </div>
+                        
+                        <h6 class="mb-3">🆓 Free Voices</h6>
+                        <div id="freeVoices">
+                            <div class="spinner-border spinner-border-sm" role="status"></div> Loading...
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Voice Recording -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-record-vinyl"></i> Record Your Voice
+                        <span class="badge bg-warning float-end">Self Recording</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="voiceName" class="form-label">Voice Name</label>
+                            <input type="text" class="form-control" id="voiceName" placeholder="e.g., my_voice">
+                        </div>
+                        <div class="mb-3">
+                            <label for="recordDuration" class="form-label">Duration (seconds)</label>
+                            <input type="number" class="form-control" id="recordDuration" value="5" min="3" max="30">
+                        </div>
+                        <button class="btn btn-success w-100" onclick="showRecordingDialog()">
+                            <i class="fas fa-microphone"></i> Start Recording
+                        </button>
+                        <div id="recordingStatus" class="mt-3"></div>
+                    </div>
+                </div>
+
+                <!-- Self Recordings List -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-user-voice"></i> Your Self Recordings
+                        <button class="btn btn-sm btn-light float-end" onclick="loadSelfRecordings()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                    <div class="card-body" id="selfRecordingsList">
+                        <div class="text-muted">No self recordings yet. Record your voice above.</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Column -->
+            <div class="col-md-8">
+                <!-- AI Script Enhancement Section -->
+                <div class="card">
+                    <div class="card-header ai-card-header">
+                        <i class="fas fa-magic"></i> Raw Script to Professional Voiceover
+                        <span id="activeAIBadge" class="badge bg-light float-end" style="color: var(--ai-color);">Select AI above</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="rawScript" class="form-label">Raw/Bullet Point Script</label>
+                            <textarea class="form-control" id="rawScript" rows="6" placeholder="Enter your raw script, bullet points, or rough notes here...&#10;&#10;Example:&#10;- Welcome to training&#10;- Company has 3 main values: integrity, teamwork, excellence&#10;- Today we cover policies&#10;- Safety first always"></textarea>
+                            <small class="text-muted"><i class="fas fa-lightbulb"></i> Tip: You can write bullet points, rough notes, or informal text - AI will transform it!</small>
+                        </div>
+                        <button class="btn btn-ai w-100" onclick="enhanceScript()" id="enhanceBtn">
+                            <i class="fas fa-robot"></i> Transform with AI
+                        </button>
+                        <div id="aiProcessing" style="display: none;" class="mt-3">
+                            <div class="alert alert-info">
+                                <i class="fas fa-spinner fa-spin"></i> AI is enhancing your script... This may take 5-10 seconds
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Enhanced Script Result -->
+                <div class="card" id="enhancedScriptCard" style="display: none;">
+                    <div class="card-header">
+                        <i class="fas fa-star"></i> AI-Enhanced Professional Script
+                        <span class="ai-badge float-end" id="enhancedByBadge">AI Enhanced</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="script-diff" id="enhancedScript"></div>
+                        <div class="mt-3">
+                            <button class="btn btn-success" onclick="useEnhancedScript()">
+                                <i class="fas fa-arrow-right"></i> Use This Script for Voiceover
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="copyEnhancedScript()">
+                                <i class="fas fa-copy"></i> Copy to Clipboard
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Script Input for Voiceover -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-file-alt"></i> Voiceover Script (Editable)
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="script" class="form-label">Professional Script for Voiceover</label>
+                            <textarea class="form-control" id="script" rows="8" placeholder="Your professional script will appear here...&#10;&#10;You can also type or paste any script directly."></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="projectName" class="form-label">Project Name (Optional)</label>
+                            <input type="text" class="form-control" id="projectName" placeholder="e.g., orientation_slide1">
+                            <small class="text-muted">Leave empty for auto-generated name</small>
+                        </div>
+                        
+                        <!-- Script Stats -->
+                        <div class="stats-card">
+                            <div class="row text-center">
+                                <div class="col-md-4">
+                                    <small class="text-muted">Words</small>
+                                    <h4 id="wordCount" class="mb-0">0</h4>
+                                </div>
+                                <div class="col-md-4">
+                                    <small class="text-muted">Characters</small>
+                                    <h4 id="charCount" class="mb-0">0</h4>
+                                </div>
+                                <div class="col-md-4">
+                                    <small class="text-muted">Est. Duration</small>
+                                    <h4 id="estDuration" class="mb-0">0s</h4>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-primary w-100 mt-3" onclick="generateVoiceover()">
+                            <i class="fas fa-play-circle"></i> Generate Voiceover
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Loading Indicator -->
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p class="mt-3"><strong>Generating voiceover...</strong></p>
+                    <p class="text-muted">This may take 10-30 seconds depending on script length</p>
+                </div>
+                
+                <!-- Results -->
+                <div class="card" id="resultCard" style="display: none;">
+                    <div class="card-header">
+                        <i class="fas fa-music"></i> Generated Voiceover
+                    </div>
+                    <div class="card-body" id="result"></div>
+                </div>
+                
+                <!-- Projects List -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-folder"></i> Recent Projects
+                        <button class="btn btn-sm btn-light float-end" onclick="loadProjects()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                    <div class="card-body" id="projectsList">
+                        <div class="text-muted">Loading projects...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let selectedVoice = { type: 'free', id: '1' };
+        let currentDownloadFile = null;
+        let currentDeleteProject = null;
+        let currentDeleteIndex = null;
+        let enhancedScriptText = '';
+        let currentAIProvider = localStorage.getItem('ai_provider') || 'deepseek';
+        
+        // Load saved API keys
+        let deepseekApiKey = localStorage.getItem('deepseek_api_key') || '';
+        let openaiApiKey = localStorage.getItem('openai_api_key') || '';
+        let openaiModel = localStorage.getItem('openai_model') || 'gpt-3.5-turbo';
+        let cerebrasApiKey = localStorage.getItem('cerebras_api_key') || '';
+        let cerebrasModel = localStorage.getItem('cerebras_model') || 'llama3.1-8b';
+        
+        // Initialize UI based on saved selection
+        function initializeAIProvider() {
+            if (currentAIProvider === 'deepseek') {
+                selectAIProvider('deepseek');
+                $('#deepseekApiKey').val(deepseekApiKey);
+            } else if (currentAIProvider === 'openai') {
+                selectAIProvider('openai');
+                $('#openaiApiKey').val(openaiApiKey);
+                $('#openaiModel').val(openaiModel);
+            } else if (currentAIProvider === 'cerebras') {
+                selectAIProvider('cerebras');
+                $('#cerebrasApiKey').val(cerebrasApiKey);
+                $('#cerebrasModel').val(cerebrasModel);
+            }
+        }
+        
+        function selectAIProvider(provider) {
+            currentAIProvider = provider;
+            
+            // Update UI
+            $('#option-deepseek, #option-openai, #option-cerebras').removeClass('selected');
+            $(`#option-${provider}`).addClass('selected');
+            $('#deepseek-config, #openai-config, #cerebras-config').hide();
+            $(`#${provider}-config`).show();
+            
+            // Update badges
+            $('#deepseek-badge, #openai-badge, #cerebras-badge').html('');
+            $(`#${provider}-badge`).html('<span class="badge bg-success">Selected</span>');
+            
+            // Update active badge text
+            let providerName = provider === 'deepseek' ? 'DeepSeek' : (provider === 'openai' ? 'ChatGPT' : 'Cerebras ⚡');
+            let icon = provider === 'deepseek' ? '🤖' : (provider === 'openai' ? '🧠' : '⚡');
+            $('#activeAIBadge').html(`${icon} Active: ${providerName}`);
+            
+            localStorage.setItem('ai_provider', provider);
+        }
+        
+        function saveAIConfig() {
+            if (currentAIProvider === 'deepseek') {
+                const apiKey = $('#deepseekApiKey').val();
+                if (apiKey) {
+                    localStorage.setItem('deepseek_api_key', apiKey);
+                    deepseekApiKey = apiKey;
+                    showToast('✅ DeepSeek API key saved!', 'success');
+                } else {
+                    showToast('Please enter DeepSeek API key', 'error');
+                }
+            } else if (currentAIProvider === 'openai') {
+                const apiKey = $('#openaiApiKey').val();
+                const model = $('#openaiModel').val();
+                if (apiKey) {
+                    localStorage.setItem('openai_api_key', apiKey);
+                    localStorage.setItem('openai_model', model);
+                    openaiApiKey = apiKey;
+                    openaiModel = model;
+                    showToast('✅ OpenAI API key saved!', 'success');
+                } else {
+                    showToast('Please enter OpenAI API key', 'error');
+                }
+            } else if (currentAIProvider === 'cerebras') {
+                const apiKey = $('#cerebrasApiKey').val();
+                const model = $('#cerebrasModel').val();
+                if (apiKey) {
+                    localStorage.setItem('cerebras_api_key', apiKey);
+                    localStorage.setItem('cerebras_model', model);
+                    cerebrasApiKey = apiKey;
+                    cerebrasModel = model;
+                    showToast('✅ Cerebras API key saved! ⚡ Lightning fast enhancement enabled!', 'success');
+                } else {
+                    showToast('Please enter Cerebras API key (free at cloud.cerebras.ai)', 'error');
+                }
+            }
+        }
+        
+        async function enhanceScript() {
+            const rawScript = $('#rawScript').val();
+            const style = $('#enhancementStyle').val();
+            
+            if (!rawScript.trim()) {
+                showToast('Please enter a raw script to enhance', 'error');
+                return;
+            }
+            
+            // Check API key based on provider
+            if (currentAIProvider === 'deepseek' && !deepseekApiKey) {
+                showToast('Please save your DeepSeek API key first', 'error');
+                return;
+            }
+            if (currentAIProvider === 'openai' && !openaiApiKey) {
+                showToast('Please save your OpenAI API key first', 'error');
+                return;
+            }
+            if (currentAIProvider === 'cerebras' && !cerebrasApiKey) {
+                showToast('Please save your Cerebras API key first (free at cloud.cerebras.ai)', 'error');
+                return;
+            }
+            
+            // Show processing
+            $('#aiProcessing').show();
+            $('#enhanceBtn').prop('disabled', true);
+            $('#enhanceBtn').html('<i class="fas fa-spinner fa-spin"></i> AI is enhancing...');
+            
+            // Style prompts
+            const stylePrompts = {
+                'professional': 'Transform this raw script into a professional, corporate-style voiceover script suitable for business training. Make it polished, clear, and authoritative. Use proper grammar and professional tone. Keep sentences moderate length (15-25 words). Add appropriate punctuation for natural breathing. Do not add markdown formatting. Just return the plain text script.',
+                'educational': 'Transform this raw script into an engaging, educational voiceover script for LMS training. Make it clear, easy to understand, and learner-friendly. Add natural pauses and emphasis. Do not add markdown formatting. Just return the plain text script.',
+                'conversational': 'Transform this raw script into a conversational, natural-sounding voiceover script. Make it sound like a friendly instructor speaking directly to the learner. Do not add markdown formatting. Just return the plain text script.',
+                'motivational': 'Transform this raw script into an inspiring, motivational voiceover script. Add energy, enthusiasm, and positive reinforcement. Do not add markdown formatting. Just return the plain text script.'
+            };
+            
+            const systemPrompt = stylePrompts[style];
+            
+            try {
+                let response;
+                let data;
+                
+                if (currentAIProvider === 'deepseek') {
+                    // DeepSeek API call
+                    response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${deepseekApiKey}`
+                        },
+                        body: JSON.stringify({
+                            model: 'deepseek-chat',
+                            messages: [
+                                { role: 'system', content: systemPrompt },
+                                { role: 'user', content: `Raw script to enhance:\n\n${rawScript}` }
+                            ],
+                            temperature: 0.7,
+                            max_tokens: 2000
+                        })
+                    });
+                    
+                    data = await response.json();
+                    
+                    if (data.choices && data.choices[0]) {
+                        enhancedScriptText = data.choices[0].message.content;
+                        $('#enhancedByBadge').html('Enhanced by DeepSeek AI');
+                    } else {
+                        throw new Error(data.error?.message || 'Enhancement failed');
+                    }
+                } else if (currentAIProvider === 'openai') {
+                    // OpenAI API call
+                    response = await fetch('https://api.openai.com/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${openaiApiKey}`
+                        },
+                        body: JSON.stringify({
+                            model: openaiModel,
+                            messages: [
+                                { role: 'system', content: systemPrompt },
+                                { role: 'user', content: `Raw script to enhance:\n\n${rawScript}` }
+                            ],
+                            temperature: 0.7,
+                            max_tokens: 2000
+                        })
+                    });
+                    
+                    data = await response.json();
+                    
+                    if (data.choices && data.choices[0]) {
+                        enhancedScriptText = data.choices[0].message.content;
+                        $('#enhancedByBadge').html('Enhanced by ChatGPT');
+                    } else {
+                        throw new Error(data.error?.message || 'Enhancement failed');
+                    }
+                } else if (currentAIProvider === 'cerebras') {
+                    // Cerebras API call - Lightning fast!
+                    response = await fetch('https://api.cerebras.ai/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${cerebrasApiKey}`
+                        },
+                        body: JSON.stringify({
+                            model: cerebrasModel,
+                            messages: [
+                                { role: 'system', content: systemPrompt },
+                                { role: 'user', content: `Raw script to enhance:\n\n${rawScript}` }
+                            ],
+                            temperature: 0.7,
+                            max_tokens: 2000
+                        })
+                    });
+                    
+                    data = await response.json();
+                    
+                    if (data.choices && data.choices[0]) {
+                        enhancedScriptText = data.choices[0].message.content;
+                        const modelName = cerebrasModel === 'llama3.1-8b' ? 'Llama 3.1 8B' : (cerebrasModel === 'llama3.1-70b' ? 'Llama 3.1 70B' : 'Qwen 3 235B');
+                        $('#enhancedByBadge').html(`Enhanced by Cerebras (${modelName}) ⚡`);
+                    } else {
+                        throw new Error(data.error?.message || 'Enhancement failed');
+                    }
+                }
+                
+                // Display enhanced script
+                $('#enhancedScript').html(`
+                    <div style="white-space: pre-wrap; line-height: 1.6;">
+                        ${enhancedScriptText.replace(/\n/g, '<br>')}
+                    </div>
+                `);
+                $('#enhancedScriptCard').show();
+                const providerName = currentAIProvider === 'deepseek' ? 'DeepSeek' : (currentAIProvider === 'openai' ? 'ChatGPT' : 'Cerebras ⚡');
+                showToast(`✅ Script enhanced successfully using ${providerName}!`, 'success');
+                
+            } catch (error) {
+                console.error('Enhancement error:', error);
+                showToast('AI Enhancement failed: ' + error.message, 'error');
+            } finally {
+                $('#aiProcessing').hide();
+                $('#enhanceBtn').prop('disabled', false);
+                $('#enhanceBtn').html('<i class="fas fa-robot"></i> Transform with AI');
+            }
+        }
+        
+        function useEnhancedScript() {
+            if (enhancedScriptText) {
+                $('#script').val(enhancedScriptText);
+                $('#script').trigger('input');
+                $('#enhancedScriptCard').hide();
+                showToast('Enhanced script loaded into voiceover editor!', 'success');
+                document.getElementById('script').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+        
+        function copyEnhancedScript() {
+            if (enhancedScriptText) {
+                navigator.clipboard.writeText(enhancedScriptText);
+                showToast('Enhanced script copied to clipboard!', 'success');
+            }
+        }
+        
+        function showToast(message, type = 'success') {
+            const bgClass = type === 'success' ? 'bg-success' : type === 'warning' ? 'bg-warning' : 'bg-danger';
+            const icon = type === 'success' ? 'fa-check-circle' : type === 'warning' ? 'fa-exclamation-triangle' : 'fa-exclamation-circle';
+            const toastHtml = `
+                <div class="toast align-items-center text-white ${bgClass} border-0 show" role="alert" style="min-width: 300px;">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="fas ${icon} me-2"></i> ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            `;
+            $('.toast-container').append(toastHtml);
+            setTimeout(() => {
+                $('.toast').last().fadeOut(300, function() { $(this).remove(); });
+            }, 4000);
+        }
+        
+        function configureEleven() {
+            const apiKey = $('#apiKey').val();
+            if (!apiKey) {
+                showToast('Please enter your ElevenLabs API key', 'error');
+                return;
+            }
+            
+            showToast('Configuring premium voices...', 'success');
+            
+            $.ajax({
+                url: '/api/configure_eleven',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ api_key: apiKey }),
+                success: function(response) {
+                    if (response.success) {
+                        showToast('✅ Premium voices enabled! You can now use Pakistani voices');
+                        loadVoices();
+                    } else {
+                        showToast('❌ ' + response.message, 'error');
+                    }
+                },
+                error: function() {
+                    showToast('Failed to configure ElevenLabs', 'error');
+                }
+            });
+        }
+        
+        function loadVoices() {
+            $.get('/api/voices', function(voices) {
+                if (voices.premium && voices.premium.length > 0) {
+                    let premiumHtml = '';
+                    voices.premium.forEach(voice => {
+                        premiumHtml += `
+                            <div class="voice-card card mb-2 p-3" onclick="selectVoice('premium', '${voice.id}')" data-voice-type="premium" data-voice-id="${voice.id}">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong><i class="fas fa-crown text-warning"></i> ${voice.display}</strong>
+                                        <br>
+                                        <small class="text-muted">${voice.style}</small>
+                                    </div>
+                                    <i class="fas fa-star text-warning"></i>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    $('#premiumVoices').html(premiumHtml);
+                }
+                
+                let freeHtml = '';
+                voices.free.forEach(voice => {
+                    const isSelected = selectedVoice.type === 'free' && selectedVoice.id === voice.id;
+                    freeHtml += `
+                        <div class="voice-card card mb-2 p-3 ${isSelected ? 'selected' : ''}" onclick="selectVoice('free', '${voice.id}')" data-voice-type="free" data-voice-id="${voice.id}">
+                            <div>
+                                <strong><i class="fas fa-microphone"></i> ${voice.display}</strong>
+                                <br>
+                                <small class="text-muted">${voice.style}</small>
+                            </div>
+                        </div>
+                    `;
+                });
+                $('#freeVoices').html(freeHtml);
+            });
+        }
+        
+        function selectVoice(type, id) {
+            selectedVoice = { type, id };
+            $('.voice-card').removeClass('selected');
+            $(`[data-voice-type="${type}"][data-voice-id="${id}"]`).addClass('selected');
+            showToast(`Selected ${type === 'premium' ? 'premium' : 'free'} voice`);
+        }
+        
+        $('#script').on('input', function() {
+            const text = $(this).val();
+            const words = text.trim().split(/\s+/).filter(w => w.length > 0).length;
+            const chars = text.length;
+            const estimatedSec = Math.max(3, Math.ceil(words / 2.5));
+            
+            $('#wordCount').text(words);
+            $('#charCount').text(chars);
+            $('#estDuration').text(estimatedSec + 's');
+        });
+        
+        function generateVoiceover() {
+            const script = $('#script').val();
+            const projectName = $('#projectName').val();
+            
+            if (!script.trim()) {
+                showToast('Please enter a script', 'error');
+                return;
+            }
+            
+            $('#loading').addClass('active');
+            $('#resultCard').hide();
+            
+            $.ajax({
+                url: '/api/generate',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    script: script,
+                    project_name: projectName,
+                    voice_type: selectedVoice.type,
+                    voice_id: selectedVoice.id
+                }),
+                success: function(response) {
+                    $('#loading').removeClass('active');
+                    
+                    if (response.success) {
+                        const resultHtml = `
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle"></i> <strong>${response.message}</strong>
+                            </div>
+                            <div class="mb-3">
+                                <p><strong>📄 File:</strong> ${response.file_name}</p>
+                                <p><strong>📊 Size:</strong> ${response.size_kb} KB</p>
+                                <p><strong>⏱️ Duration:</strong> ${response.duration_seconds} seconds</p>
+                            </div>
+                            <audio controls class="audio-player" autoplay>
+                                <source src="/api/audio/${response.file}" type="audio/mpeg">
+                                Your browser does not support the audio element.
+                            </audio>
+                            <div class="mt-3">
+                                <button class="btn btn-success" onclick="downloadAudio('${response.file}', '${response.file_name}')">
+                                    <i class="fas fa-download"></i> Download MP3
+                                </button>
+                            </div>
+                        `;
+                        $('#result').html(resultHtml);
+                        $('#resultCard').show();
+                        showToast('✅ Voiceover generated successfully!');
+                        loadProjects();
+                    } else {
+                        showToast('❌ ' + response.message, 'error');
+                    }
+                },
+                error: function(xhr) {
+                    $('#loading').removeClass('active');
+                    showToast('Generation failed: ' + (xhr.responseJSON?.message || 'Server error'), 'error');
+                }
+            });
+        }
+        
+        function downloadAudio(filepath, defaultName) {
+            currentDownloadFile = { filepath, defaultName };
+            $('#saveFilename').val(defaultName.replace('.mp3', ''));
+            $('#saveLocation').val('');
+            $('#downloadModal').modal('show');
+        }
+        
+        function selectSaveLocation() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.webkitdirectory = true;
+            input.onchange = (e) => {
+                const path = e.target.files[0].webkitRelativePath.split('/')[0];
+                if (path) {
+                    $('#saveLocation').val(path);
+                }
+            };
+            input.click();
+        }
+        
+        function confirmDownload() {
+            let filename = $('#saveFilename').val().trim();
+            if (!filename) {
+                filename = currentDownloadFile.defaultName.replace('.mp3', '');
+            }
+            if (!filename.endsWith('.mp3')) {
+                filename += '.mp3';
+            }
+            
+            const link = document.createElement('a');
+            link.href = `/api/audio/${currentDownloadFile.filepath}`;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            $('#downloadModal').modal('hide');
+            showToast(`Downloading ${filename}...`, 'success');
+        }
+        
+        function deleteVoiceover(project, index, fileName) {
+            currentDeleteProject = project;
+            currentDeleteIndex = index;
+            $('#deleteFileInfo').html(`
+                <p><strong>File:</strong> ${fileName}</p>
+                <p><strong>Project:</strong> ${project}</p>
+            `);
+            $('#deleteModal').modal('show');
+        }
+        
+        function confirmDelete() {
+            $.ajax({
+                url: '/api/delete_voiceover',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    project_name: currentDeleteProject,
+                    file_index: currentDeleteIndex
+                }),
+                success: function(response) {
+                    if (response.success) {
+                        showToast('✅ Voiceover deleted successfully!');
+                        loadProjects();
+                        $('#resultCard').hide();
+                    } else {
+                        showToast('❌ ' + response.message, 'error');
+                    }
+                    $('#deleteModal').modal('hide');
+                },
+                error: function() {
+                    showToast('Failed to delete voiceover', 'error');
+                    $('#deleteModal').modal('hide');
+                }
+            });
+        }
+        
+        function loadProjects() {
+            $.get('/api/projects', function(projects) {
+                if (Object.keys(projects).length === 0) {
+                    $('#projectsList').html('<div class="text-muted">No projects yet. Generate your first voiceover!</div>');
+                    return;
+                }
+                
+                let projectsHtml = '';
+                for (const [projectName, files] of Object.entries(projects)) {
+                    projectsHtml += `
+                        <div class="card mb-3 project-item">
+                            <div class="card-header bg-light">
+                                <strong><i class="fas fa-folder-open"></i> ${projectName}</strong>
+                                <span class="badge bg-secondary float-end">${files.length} files</span>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="list-group list-group-flush">
+                    `;
+                    
+                    files.slice().reverse().forEach((file, idx) => {
+                        const originalIndex = files.length - 1 - idx;
+                        const fileName = file.file.split('/').pop();
+                        const fileDate = new Date(file.created).toLocaleString();
+                        
+                        projectsHtml += `
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="fas fa-file-audio text-primary me-2"></i>
+                                            <strong>${fileName}</strong>
+                                        </div>
+                                        <div class="small text-muted">
+                                            <i class="fas fa-clock"></i> ${file.duration?.toFixed(1)}s | 
+                                            <i class="fas fa-microphone"></i> ${file.voice} |
+                                            <i class="fas fa-calendar"></i> ${fileDate}
+                                        </div>
+                                        <div class="mt-2">
+                                            <small class="text-muted">Script: ${file.script.substring(0, 80)}${file.script.length > 80 ? '...' : ''}</small>
+                                        </div>
+                                    </div>
+                                    <div class="ms-3">
+                                        <button class="btn btn-sm btn-outline-primary mb-1 w-100" onclick="playAudio('${file.file}')" title="Play">
+                                            <i class="fas fa-play"></i> Play
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-success mb-1 w-100" onclick="downloadAudio('${file.file}', '${fileName}')" title="Download">
+                                            <i class="fas fa-download"></i> Save
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger w-100" onclick="deleteVoiceover('${projectName}', ${originalIndex}, '${fileName}')" title="Delete">
+                                            <i class="fas fa-trash"></i> Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    projectsHtml += `
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                $('#projectsList').html(projectsHtml);
+            }).fail(function() {
+                $('#projectsList').html('<div class="alert alert-danger">Failed to load projects. Make sure the server is running.</div>');
+            });
+        }
+        
+        function playAudio(filepath) {
+            const audio = new Audio(`/api/audio/${filepath}`);
+            audio.play();
+            showToast('▶️ Playing audio...');
+        }
+        
+        // Recording Dialog Functions
+        function showRecordingDialog() {
+            const name = $('#voiceName').val();
+            if (!name) {
+                showToast('Please enter a voice name', 'error');
+                return;
+            }
+            
+            // Remove existing modal if any
+            $('#recordingDialog').remove();
+            
+            const dialogHtml = `
+                <div class="modal fade" id="recordingDialog" tabindex="-1" data-bs-backdrop="static">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header" style="background: linear-gradient(135deg, #27ae60, #1e8449); color: white;">
+                                <h5 class="modal-title">
+                                    <i class="fas fa-microphone-alt"></i> Ready to Record?
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body text-center">
+                                <div id="countdownDisplay">
+                                    <i class="fas fa-microphone" style="font-size: 48px; color: #27ae60;"></i>
+                                    <h3 class="mt-3">Get Ready!</h3>
+                                    <p>You will record: <strong>${name}</strong></p>
+                                    <p>Duration: <strong>${$('#recordDuration').val()} seconds</strong></p>
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle"></i> Please speak clearly and naturally
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-success" onclick="startCountdown()">
+                                    <i class="fas fa-play"></i> Start Recording
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            $('body').append(dialogHtml);
+            $('#recordingDialog').modal('show');
+        }
+        
+        let countdownInterval;
+        
+        function startCountdown() {
+            let countdown = 3;
+            const duration = $('#recordDuration').val();
+            const name = $('#voiceName').val();
+            
+            $('#countdownDisplay').html(`
+                <div class="text-center">
+                    <div style="font-size: 72px; font-weight: bold;" id="countdownNumber">${countdown}</div>
+                    <p>Recording will start in...</p>
+                </div>
+            `);
+            
+            if (countdownInterval) clearInterval(countdownInterval);
+            
+            countdownInterval = setInterval(() => {
+                countdown--;
+                if (countdown > 0) {
+                    $('#countdownNumber').text(countdown);
+                } else {
+                    clearInterval(countdownInterval);
+                    $('#countdownDisplay').html(`
+                        <div class="text-center">
+                            <i class="fas fa-circle" style="font-size: 48px; color: red; animation: pulse 1s infinite;"></i>
+                            <h3 class="mt-3 text-danger">🔴 RECORDING...</h3>
+                            <p>Recording ${duration} seconds</p>
+                            <div class="progress mt-3">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated bg-danger" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    `);
+                    
+                    startActualRecording(name, duration);
+                }
+            }, 1000);
+        }
+        
+        function startActualRecording(name, duration) {
+            const progressBar = $('.progress-bar');
+            let progress = 0;
+            
+            const progressInterval = setInterval(() => {
+                progress += 100 / (duration * 2);
+                if (progress <= 100) {
+                    progressBar.css('width', `${progress}%`);
+                }
+                if (progress >= 100) clearInterval(progressInterval);
+            }, 500);
+            
+            $.ajax({
+                url: '/api/record',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ name, duration: parseInt(duration) }),
+                success: function(response) {
+                    clearInterval(progressInterval);
+                    if (response.success) {
+                        $('#countdownDisplay').html(`
+                            <div class="text-center">
+                                <i class="fas fa-check-circle" style="font-size: 48px; color: green;"></i>
+                                <h3 class="mt-3 text-success">✅ Recording Complete!</h3>
+                                <p>Duration: ${response.duration.toFixed(1)} seconds</p>
+                                <p>Volume: ${response.volume_db} dB</p>
+                            </div>
+                        `);
+                        showToast('✅ Recording completed successfully!');
+                        loadSelfRecordings();
+                        
+                        setTimeout(() => {
+                            $('#recordingDialog').modal('hide');
+                            $('#recordingDialog').remove();
+                        }, 2000);
+                    } else {
+                        showToast('❌ Recording failed: ' + response.message, 'error');
+                        $('#recordingDialog').modal('hide');
+                        $('#recordingDialog').remove();
+                    }
+                },
+                error: function() {
+                    clearInterval(progressInterval);
+                    showToast('Recording failed', 'error');
+                    $('#recordingDialog').modal('hide');
+                    $('#recordingDialog').remove();
+                }
+            });
+        }
+        
+        function loadSelfRecordings() {
+            $.get('/api/recordings', function(recordings) {
+                if (!recordings || recordings.length === 0) {
+                    $('#selfRecordingsList').html('<div class="text-muted">No self recordings yet. Click "Start Recording" above.</div>');
+                    return;
+                }
+                
+                let recordingsHtml = '<div class="list-group">';
+                recordings.slice().reverse().forEach(rec => {
+                    const fileName = rec.file.split('/').pop();
+                    const fileDate = new Date(rec.created).toLocaleString();
+                    
+                    recordingsHtml += `
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <i class="fas fa-user-circle text-success me-2" style="font-size: 20px;"></i>
+                                        <strong>${rec.name}</strong>
+                                        <span class="badge bg-success ms-2">Self Recording</span>
+                                    </div>
+                                    <div class="small text-muted">
+                                        <i class="fas fa-clock"></i> ${rec.duration.toFixed(1)}s | 
+                                        <i class="fas fa-chart-line"></i> ${rec.volume_db} dB |
+                                        <i class="fas fa-calendar"></i> ${fileDate}
+                                    </div>
+                                </div>
+                                <div class="ms-3">
+                                    <button class="btn btn-sm btn-outline-primary mb-1 w-100" onclick="playRecording('${rec.file}')" title="Play">
+                                        <i class="fas fa-play"></i> Play
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-success mb-1 w-100" onclick="downloadRecording('${rec.file}', '${fileName}')" title="Download">
+                                        <i class="fas fa-download"></i> Save
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger w-100" onclick="deleteRecording('${rec.id}', '${rec.name}')" title="Delete">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                recordingsHtml += '</div>';
+                $('#selfRecordingsList').html(recordingsHtml);
+            });
+        }
+        
+        function playRecording(filepath) {
+            const audio = new Audio(`/api/audio/${filepath}`);
+            audio.play();
+            showToast('▶️ Playing self recording...');
+        }
+        
+        function downloadRecording(filepath, filename) {
+            const link = document.createElement('a');
+            link.href = `/api/audio/${filepath}`;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('📥 Downloading recording...');
+        }
+        
+        function deleteRecording(recordingId, name) {
+            if (confirm(`Are you sure you want to delete "${name}"?`)) {
+                $.ajax({
+                    url: '/api/delete_recording',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ recording_id: recordingId }),
+                    success: function(response) {
+                        if (response.success) {
+                            showToast('✅ Recording deleted successfully');
+                            loadSelfRecordings();
+                        } else {
+                            showToast('❌ ' + response.message, 'error');
+                        }
+                    }
+                });
+            }
+        }
+        
+        $(document).ready(function() {
+            initializeAIProvider();
+            loadVoices();
+            loadProjects();
+            loadSelfRecordings();
+            $('#script').trigger('input');
+            showToast('🎙️ Voice Studio Ready! Choose AI: DeepSeek, ChatGPT, or ⚡ Cerebras', 'success');
+            setInterval(loadProjects, 30000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "self_recordings": [
+    {
+      "id": "20260502_001744",
+      "name": "a",
+      "file": "voiceover_projects/recordings/a_20260502_001744.wav",
+      "duration": 5.0,
+      "volume_db": -36.7,
+      "created": "20260502_001744",
+      "type": "self_recording"
+    }
+  ]
+}
