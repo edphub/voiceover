@@ -18,6 +18,7 @@ import os
 import socket
 from werkzeug.utils import secure_filename
 
+
 # Convert numpy types to Python types
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -163,6 +164,9 @@ def estimate_script_duration(script):
 def index():
     return render_template('index.html')
 
+# Required for Vercel
+def handler(environ, start_response):
+    return app(environ, start_response)
 
 @app.route('/api/voices', methods=['GET'])
 def get_voices():
