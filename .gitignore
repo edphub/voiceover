@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.env
+voiceover_projects/
+*.mp3
+*.wav
+.DS_Store
+venv/
+env/
+.vscode/
+*.log

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-VoiceOver Studio Web Application - Complete Working Version
+VoiceOver Studio Web Application - Vercel Compatible Version
 """
 
 from flask import Flask, render_template, request, jsonify, send_file
@@ -17,58 +17,22 @@ import subprocess
 import os
 import socket
 from werkzeug.utils import secure_filename
+import tempfile
+import base64
+import io
 
-
-# Convert numpy types to Python types
-class NumpyEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, np.integer):
-            return int(obj)
-        if isinstance(obj, np.floating):
-            return float(obj)
-        if isinstance(obj, np.ndarray):
-            return obj.tolist()
-        return super(NumpyEncoder, self).default(obj)
-
-# Audio processing
-try:
-    from pydub import AudioSegment
-    PYDUB_OK = True
-except ImportError:
-    PYDUB_OK = False
-    print("⚠️ pydub not installed. Install: pip install pydub")
-
-# Recording
-try:
-    import soundcard as sc
-    SOUNDCARD_OK = True
-except ImportError:
-    SOUNDCARD_OK = False
-    print("⚠️ soundcard not installed. Install: pip install soundcard")
-
-# TTS engines
-try:
-    import edge_tts
-    EDGE_OK = True
-except ImportError:
-    EDGE_OK = False
-    print("⚠️ edge-tts not installed. Install: pip install edge-tts")
-
-try:
-    from elevenlabs import generate, set_api_key
-    ELEVEN_OK = True
-except ImportError:
-    ELEVEN_OK = False
-    print("⚠️ elevenlabs not installed. Install: pip install elevenlabs")
-
+# Create Flask app
 app = Flask(__name__)
 CORS(app)
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
-app.json_encoder = NumpyEncoder
 
-# Configuration
-WORK_DIR = Path("voiceover_projects")
-WORK_DIR.mkdir(exist_ok=True)
+# Configure directories for Vercel (use /tmp for writable storage)
+if os.environ.get('VERCEL'):
+    WORK_DIR = Path('/tmp/voiceover_projects')
+else:
+    WORK_DIR = Path("voiceover_projects")
+
+WORK_DIR.mkdir(exist_ok=True, parents=True)
 SPECIMENS_FILE = WORK_DIR / "specimens.json"
 PROJECTS_FILE = WORK_DIR / "projects.json"
 RECORDINGS_FILE = WORK_DIR / "recordings.json"
@@ -129,10 +93,52 @@ EDGE_VOICES = {
     }
 }
 
+# Check available libraries
+PYDUB_OK = False
+SOUNDCARD_OK = False
+EDGE_OK = False
+ELEVEN_OK = False
+
+try:
+    from pydub import AudioSegment
+    PYDUB_OK = True
+except ImportError:
+    pass
+
+try:
+    import soundcard as sc
+    SOUNDCARD_OK = True
+except ImportError:
+    pass
+
+try:
+    import edge_tts
+    EDGE_OK = True
+except ImportError:
+    pass
+
+try:
+    from elevenlabs import generate, set_api_key
+    ELEVEN_OK = True
+except ImportError:
+    pass
+
 # Global variables
 eleven_enabled = False
 eleven_api_key = None
 
+# Custom JSON encoder
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super(NumpyEncoder, self).default(obj)
+
+app.json_encoder = NumpyEncoder
 
 def load_json(filepath):
     if filepath.exists():
@@ -143,11 +149,9 @@ def load_json(filepath):
             return {}
     return {}
 
-
 def save_json(filepath, data):
     with open(filepath, 'w') as f:
         json.dump(data, f, indent=2)
-
 
 def estimate_script_duration(script):
     """Estimate speaking duration in seconds"""
@@ -159,14 +163,9 @@ def estimate_script_duration(script):
     buffer = max(2, seconds * 0.1)
     return max(3, int(seconds + buffer))
 
-
 @app.route('/')
 def index():
     return render_template('index.html')
-
-# Required for Vercel
-def handler(environ, start_response):
-    return app(environ, start_response)
 
 @app.route('/api/voices', methods=['GET'])
 def get_voices():
@@ -195,9 +194,7 @@ def get_voices():
             "gender": voice.get("gender", "Unknown")
         })
     
-    print(f"Returning {len(voices['free'])} free voices")  # Debug
     return jsonify(voices)
-
 
 @app.route('/api/configure_eleven', methods=['POST'])
 def configure_eleven():
@@ -217,7 +214,6 @@ def configure_eleven():
     else:
         return jsonify({"success": False, "message": "Invalid API key or ElevenLabs not installed"})
 
-
 @app.route('/api/record', methods=['POST'])
 def record_voice():
     """Record voice specimen"""
@@ -229,33 +225,27 @@ def record_voice():
         return jsonify({"success": False, "message": "Name required"})
     
     if not SOUNDCARD_OK:
-        return jsonify({"success": False, "message": "Soundcard not available. Install: pip install soundcard"})
+        return jsonify({"success": False, "message": "Soundcard not available. Recording requires a local environment."})
     
     try:
-        # Get default microphone
         mics = sc.all_microphones()
         if not mics:
-            return jsonify({"success": False, "message": "No microphone found. Check system settings."})
+            return jsonify({"success": False, "message": "No microphone found."})
         
         mic = sc.default_microphone()
-        
-        # Record
         sample_rate = 44100
-        print(f"Recording for {duration} seconds...")
         recording = mic.record(samplerate=sample_rate, 
                               numframes=int(sample_rate * duration))
         
         if recording is None or len(recording) == 0:
             return jsonify({"success": False, "message": "No audio captured"})
         
-        # Save
         recordings_dir = WORK_DIR / "recordings"
         recordings_dir.mkdir(exist_ok=True)
         
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = recordings_dir / f"{name}_{timestamp}.wav"
         
-        # Convert float32 to int16
         audio_int16 = (recording * 32767).astype(np.int16)
         
         with wave.open(str(filename), 'wb') as wf:
@@ -264,12 +254,10 @@ def record_voice():
             wf.setframerate(sample_rate)
             wf.writeframes(audio_int16.tobytes())
         
-        # Calculate volume
         rms = float(np.sqrt(np.mean(recording**2)))
         volume_db = float(20 * np.log10(rms + 0.0001))
         duration_float = float(len(recording) / sample_rate)
         
-        # Save to recordings database
         recordings = load_json(RECORDINGS_FILE)
         if "self_recordings" not in recordings:
             recordings["self_recordings"] = []
@@ -299,17 +287,13 @@ def record_voice():
         print(f"Recording error: {e}")
         return jsonify({"success": False, "message": str(e)})
 
-
 @app.route('/api/recordings', methods=['GET'])
 def get_recordings():
-    """Get all self-recordings"""
     recordings = load_json(RECORDINGS_FILE)
     return jsonify(recordings.get("self_recordings", []))
 
-
 @app.route('/api/delete_recording', methods=['POST'])
 def delete_recording():
-    """Delete a self-recording"""
     data = request.json
     recording_id = data.get('recording_id', '')
     
@@ -329,7 +313,6 @@ def delete_recording():
                 return jsonify({"success": True, "message": "Recording deleted"})
     
     return jsonify({"success": False, "message": "Recording not found"})
-
 
 @app.route('/api/generate', methods=['POST'])
 def generate_voiceover():
@@ -356,7 +339,7 @@ def generate_voiceover():
     output_file = project_dir / f"{project_name}_{timestamp}.mp3"
     
     try:
-        if voice_type == 'premium' and eleven_enabled:
+        if voice_type == 'premium' and eleven_enabled and ELEVEN_OK:
             voice_info = ELEVEN_VOICES.get(voice_id)
             if not voice_info:
                 return jsonify({"success": False, "message": "Invalid voice ID"})
@@ -372,6 +355,9 @@ def generate_voiceover():
                 
         else:
             # Use edge-tts (free)
+            if not EDGE_OK:
+                return jsonify({"success": False, "message": "Edge TTS not available. Please install edge-tts."})
+            
             voice_info = EDGE_VOICES.get(voice_id, EDGE_VOICES["1"])
             
             async def generate_edge():
@@ -423,18 +409,15 @@ def generate_voiceover():
         print(f"Generation error: {e}")
         return jsonify({"success": False, "message": str(e)})
 
-
 @app.route('/api/projects', methods=['GET'])
 def get_projects():
     projects = load_json(PROJECTS_FILE)
     return jsonify(projects)
 
-
 @app.route('/api/specimens', methods=['GET'])
 def get_specimens():
     specimens = load_json(SPECIMENS_FILE)
     return jsonify(specimens)
-
 
 @app.route('/api/delete_voiceover', methods=['POST'])
 def delete_voiceover():
@@ -476,7 +459,6 @@ def delete_voiceover():
     else:
         return jsonify({"success": False, "message": "Invalid file index"})
 
-
 @app.route('/api/audio/<path:filepath>')
 def serve_audio(filepath):
     try:
@@ -484,38 +466,16 @@ def serve_audio(filepath):
     except:
         return jsonify({"error": "File not found"}), 404
 
+# This is the handler for Vercel
+app.debug = False
 
-def find_free_port(start_port=5001, max_port=5010):
-    for port in range(start_port, max_port):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            try:
-                s.bind(('0.0.0.0', port))
-                return port
-            except OSError:
-                continue
-    return 5001
-
-
+# For local development
 if __name__ == '__main__':
-    port = find_free_port()
+    port = int(os.environ.get('PORT', 5000))
     print("\n" + "="*50)
     print("🎙️ VoiceOver Studio Web Application")
     print("="*50)
     print(f"\n✅ Server starting on port: {port}")
-    print(f"🌐 Open in browser: http://localhost:{port}")
-    print("\n💡 Features:")
-    print("   - 6 Free voices available (Indian, US, UK, Australian)")
-    print("   - Voice recording with popup dialog")
-    print("   - AI script enhancement (ChatGPT/DeepSeek/Cerebras)")
-    print("   - Download/Edit/Delete recordings")
     print("\n" + "="*50 + "\n")
     
-    # Test edge-tts on startup
-    print("Testing edge-tts...")
-    try:
-        import edge_tts
-        print("✅ edge-tts is available")
-    except:
-        print("❌ edge-tts not available. Install: pip install edge-tts")
-    
-    app.run(debug=True, host='0.0.0.0', port=port)
+    app.run(debug=False, host='0.0.0.0', port=port)

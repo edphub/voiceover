@@ -1,0 +1,8 @@
+flask==2.3.3
+flask-cors==4.0.0
+numpy==1.24.3
+pydub==0.25.1
+edge-tts==6.1.9
+soundcard==0.4.3
+six==1.16.0
+python-dotenv==1.0.0
